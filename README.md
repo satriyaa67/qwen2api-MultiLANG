@@ -1,3 +1,21 @@
+> ## ⚠️ Fork Bildirimi · Fork Notice
+>
+> **Bu depo, [YuJunZhiXue/qwen2API](https://github.com/YuJunZhiXue/qwen2API) projesinin çok dilli (i18n) desteği eklenmiş bir fork'udur.** WebUI'yi Çincenin yanı sıra **İngilizce** ve **Türkçe** olarak kullanabilirsiniz. Kodun tamamı orijinal projeden gelir; tüm telif hakkı ve kredi orijinal yazarlara aittir.
+>
+> **This repository is a fork of [YuJunZhiXue/qwen2API](https://github.com/YuJunZhiXue/qwen2API) with added multi-language (i18n) support.** The WebUI is now available in **English** and **Turkish** alongside the original Chinese. All code originates from the original project; the original authors retain all copyright and credit.
+
+## 🌐 Çok Dilli WebUI / Multi-language WebUI
+
+| Dil / Language | Kod / Code | Durum / Status |
+| --- | --- | --- |
+| 简体中文 | `zh` | ✅ Orijinal · Original |
+| English | `en` | ✅ Eklendi · Added |
+| Türkçe | `tr` | ✅ Eklendi · Added |
+
+Dil değiştirici yönetim panelinin üst sağ köşesindedir; seçiminiz tarayıcıda hatırlanır. / The language switcher sits in the top-right of the admin header; your choice is remembered per browser.
+
+---
+
 [English](README.md) | [简体中文](README_CN.md)
 
 <div align="center">
