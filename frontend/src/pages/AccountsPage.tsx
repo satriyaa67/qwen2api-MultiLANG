@@ -1,3 +1,4 @@
+import { t, useT } from "../lib/i18n"
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react"
 import { Button } from "../components/ui/button"
 import {
@@ -93,12 +94,12 @@ function statusStyle(code?: string) {
 }
 
 const RATE_LIMIT_LABELS: Record<string, string> = {
-  chat: "对话限流",
-  image: "图片限额",
-  video: "视频限额",
-  metadata: "元数据限流",
-  unknown: "旧版未知限额",
-  legacy: "旧版限额",
+  chat: t("s0062"),
+  image: t("s0063"),
+  video: t("s0064"),
+  metadata: t("s0065"),
+  unknown: t("s0066"),
+  legacy: t("s0067"),
 }
 
 function activeRateLimits(acc: AccountItem) {
@@ -107,7 +108,7 @@ function activeRateLimits(acc: AccountItem) {
     .filter(([, state]) => Number(state?.until || 0) > now)
     .map(([usage, state]) => ({
       usage,
-      label: RATE_LIMIT_LABELS[usage] || `${usage} 限额`,
+      label: RATE_LIMIT_LABELS[usage] || t("accounts.rateFallback", { usage }),
       until: Number(state.until || 0),
       error: state.last_error || state.reason || "",
     }))
@@ -115,7 +116,7 @@ function activeRateLimits(acc: AccountItem) {
   if ((acc.rate_limited_until || 0) > now && !items.some(item => item.usage === "chat")) {
     items.push({
       usage: "legacy",
-      label: "旧版限额",
+      label: t("s0067"),
       until: Number(acc.rate_limited_until || 0),
       error: acc.last_error || "",
     })
@@ -142,17 +143,17 @@ function formatLimitTime(until: number) {
 function limitSummary(acc: AccountItem) {
   const limits = activeRateLimits(acc)
   if (limits.length === 0) return ""
-  return limits.map(item => `${item.label}：${formatLimitTime(item.until)} 恢复`).join("；")
+  return limits.map(item => t("accounts.limitRecover", { label: item.label, time: formatLimitTime(item.until) })).join("；")
 }
 
 function statusText(acc: AccountItem) {
   switch (effectiveStatusCode(acc)) {
-    case "valid": return "\u6b63\u5e38"
-    case "pending_activation": return "\u672a\u6fc0\u6d3b"
-    case "rate_limited": return hasActiveChatLimit(acc) ? "对话限流" : "\u9650\u6d41"
-    case "banned": return "\u5c01\u7981"
-    case "auth_error": return "\u8ba4\u8bc1\u5931\u6548"
-    default: return acc.valid ? "\u6b63\u5e38" : "\u5f02\u5e38"
+    case "valid": return t("s0068")
+    case "pending_activation": return t("s0069")
+    case "rate_limited": return hasActiveChatLimit(acc) ? t("s0062") : t("s0070")
+    case "banned": return t("s0071")
+    case "auth_error": return t("s0072")
+    default: return acc.valid ? t("s0068") : t("s0073")
   }
 }
 
@@ -185,7 +186,7 @@ function failureOf(acc: AccountItem) {
 function recoveryText(acc: AccountItem) {
   const summary = limitSummary(acc)
   if (summary) return summary
-  if (acc.status_code === "rate_limited") return "\u7b49\u5f85\u4e0a\u6e38\u6062\u590d"
+  if (acc.status_code === "rate_limited") return t("s0074")
   return "-"
 }
 
@@ -363,6 +364,8 @@ function zipBlob(entries: ZipEntry[]) {
 }
 
 export default function AccountsPage() {
+  const { t } = useT()
+
   const [accounts, setAccounts] = useState<AccountItem[]>([])
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -381,7 +384,7 @@ export default function AccountsPage() {
 
   const requireSessionKey = () => {
     if (getStoredApiKey()) return true
-    toast.error("请先到「系统设置」粘贴 ADMIN_KEY 或 data/api_keys.json 中已有 API Key")
+    toast.error(t("s0075"))
     return false
   }
 
@@ -393,7 +396,7 @@ export default function AccountsPage() {
   const fetchAccounts = (notify = false) => {
     if (!getStoredApiKey()) {
       setAccounts([])
-      toast.error("请先到「系统设置」粘贴 ADMIN_KEY 或 data/api_keys.json 中已有 API Key")
+      toast.error(t("s0075"))
       return
     }
     fetch(`${API_BASE}/api/admin/accounts`, { headers: getAuthHeader() })
@@ -402,9 +405,9 @@ export default function AccountsPage() {
         const next = data.accounts || []
         setAccounts(next)
         setSelected(prev => new Set([...prev].filter(email => next.some((acc: AccountItem) => acc.email === email))))
-        if (notify) toast.success("账号列表已刷新")
+        if (notify) toast.success(t("s0076"))
       })
-      .catch(err => toast.error(err instanceof Error ? err.message : "\u5237\u65b0\u8d26\u53f7\u5217\u8868\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u4f1a\u8bdd\u5bc6\u94a5"))
+      .catch(err => toast.error(err instanceof Error ? err.message : t("s0077")))
   }
 
   useEffect(() => {
@@ -468,10 +471,10 @@ export default function AccountsPage() {
   const handleAdd = () => {
     if (!requireSessionKey()) return
     if (!token.trim()) {
-      toast.error("\u8bf7\u5148\u586b\u5199 Token")
+      toast.error(t("s0078"))
       return
     }
-    const id = toast.loading("\u6b63\u5728\u6ce8\u5165\u8d26\u53f7...")
+    const id = toast.loading(t("s0079"))
     fetch(`${API_BASE}/api/admin/accounts`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeader() },
@@ -483,22 +486,22 @@ export default function AccountsPage() {
     }).then(readAdminJSON)
       .then(data => {
         if (data.ok) {
-          toast.success("\u8d26\u53f7\u5df2\u52a0\u5165\u8d26\u53f7\u6c60", { id })
+          toast.success(t("s0080"), { id })
           setEmail("")
           setPassword("")
           setToken("")
           fetchAccounts()
         } else {
-          toast.error(localizeError(data.error) || "\u8d26\u53f7\u6ce8\u5165\u5931\u8d25", { id, duration: 8000 })
+          toast.error(localizeError(data.error) || t("s0081"), { id, duration: 8000 })
         }
       })
-      .catch(err => toast.error(err instanceof Error ? err.message : "\u8d26\u53f7\u6ce8\u5165\u8bf7\u6c42\u5931\u8d25", { id }))
+      .catch(err => toast.error(err instanceof Error ? err.message : t("s0082"), { id }))
   }
 
   const handleDelete = (target: AccountItem) => {
     if (!requireSessionKey()) return
     if (target.source === "env") {
-      toast.error("\u73af\u5883\u53d8\u91cf\u6ce8\u5165\u8d26\u53f7\u4e0d\u80fd\u5728\u9762\u677f\u5220\u9664")
+      toast.error(t("s0083"))
       return
     }
 
@@ -515,18 +518,18 @@ export default function AccountsPage() {
         return next
       })
       fetchAccounts()
-    }).catch(err => toast.error(err instanceof Error ? err.message : "\u5220\u9664\u8d26\u53f7\u5931\u8d25", { id }))
+    }).catch(err => toast.error(err instanceof Error ? err.message : t("s0084"), { id }))
   }
 
   const handleDeleteSelected = async () => {
     if (!requireSessionKey()) return
     const deletableAccounts = selectedAccounts.filter(acc => acc.source !== "env")
     if (!deletableAccounts.length) {
-      toast.error("请先选择账号")
+      toast.error(t("s0085"))
       return
     }
     const skipped = selectedAccounts.length - deletableAccounts.length
-    const id = toast.loading(`正在删除 ${deletableAccounts.length} 个选中账号...`)
+    const id = toast.loading(t("accounts.deletingSelected", { n: deletableAccounts.length }))
     let ok = 0
     let failed = 0
     for (const acc of deletableAccounts) {
@@ -541,7 +544,7 @@ export default function AccountsPage() {
         failed += 1
       }
     }
-    toast.success(`删除完成：成功 ${ok}，失败 ${failed}${skipped ? `，跳过环境变量账号 ${skipped}` : ""}`, { id, duration: 8000 })
+    toast.success(`${t("accounts.deleteDone", { ok, failed })}${skipped ? t("accounts.skipEnv", { count: skipped }) : ""}`, { id, duration: 8000 })
     setSelected(new Set())
     fetchAccounts()
   }
@@ -550,10 +553,10 @@ export default function AccountsPage() {
     if (!requireSessionKey()) return
     const abnormal = accounts.filter(acc => acc.status_code !== "valid" && !acc.valid)
     if (!abnormal.length) {
-      toast.success("当前没有异常账号需要移除")
+      toast.success(t("s0086"))
       return
     }
-    const id = toast.loading(`正在移除 ${abnormal.length} 个异常账号...`)
+    const id = toast.loading(t("accounts.removingAbnormal", { n: abnormal.length }))
     let ok = 0
     let failed = 0
     for (const acc of abnormal) {
@@ -568,7 +571,7 @@ export default function AccountsPage() {
         failed += 1
       }
     }
-    toast.success(`异常账号移除完成：成功 ${ok}，失败 ${failed}`, { id, duration: 8000 })
+    toast.success(t("accounts.removeDone", { ok, failed }), { id, duration: 8000 })
     setSelected(new Set())
     fetchAccounts()
   }
@@ -589,14 +592,14 @@ export default function AccountsPage() {
         }
         fetchAccounts()
       })
-      .catch(err => toast.error(err instanceof Error ? err.message : "\u9a8c\u8bc1\u8bf7\u6c42\u5931\u8d25", { id }))
+      .catch(err => toast.error(err instanceof Error ? err.message : t("s0087"), { id }))
       .finally(() => setVerifying(null))
   }
 
   const handleVerifyAll = () => {
     if (!requireSessionKey()) return
     setVerifyingAll(true)
-    const id = toast.loading("\u6b63\u5728\u5e76\u53d1\u5de1\u68c0\u6240\u6709\u8d26\u53f7...")
+    const id = toast.loading(t("s0088"))
     fetch(`${API_BASE}/api/admin/verify`, {
       method: "POST",
       headers: getAuthHeader(),
@@ -605,21 +608,21 @@ export default function AccountsPage() {
         if (data.ok) {
           toast.success(`\u5168\u91cf\u5de1\u68c0\u5b8c\u6210\uff0c\u5e76\u53d1\u6570\uff1a${data.concurrency || 1}`, { id })
         } else {
-          toast.error("\u5168\u91cf\u5de1\u68c0\u5931\u8d25", { id })
+          toast.error(t("s0089"), { id })
         }
         fetchAccounts()
       })
-      .catch(err => toast.error(err instanceof Error ? err.message : "\u5168\u91cf\u5de1\u68c0\u8bf7\u6c42\u5931\u8d25", { id }))
+      .catch(err => toast.error(err instanceof Error ? err.message : t("s0090"), { id }))
       .finally(() => setVerifyingAll(false))
   }
 
   const handleVerifySelected = async () => {
     if (!requireSessionKey()) return
     if (!selectedAccounts.length) {
-      toast.error("请先选择账号")
+      toast.error(t("s0085"))
       return
     }
-    const id = toast.loading(`正在刷新选中 ${selectedAccounts.length} 个账号信息和额度...`)
+    const id = toast.loading(t("accounts.refreshingSelected", { n: selectedAccounts.length }))
     let ok = 0
     let failed = 0
     for (const acc of selectedAccounts) {
@@ -635,7 +638,7 @@ export default function AccountsPage() {
         failed += 1
       }
     }
-    toast.success(`刷新完成：通过 ${ok}，失败 ${failed}`, { id, duration: 8000 })
+    toast.success(t("accounts.refreshDone", { ok, failed }), { id, duration: 8000 })
     fetchAccounts()
   }
 
@@ -656,7 +659,7 @@ export default function AccountsPage() {
         }
         fetchAccounts()
       })
-      .catch(err => toast.error(err instanceof Error ? err.message : "\u6fc0\u6d3b\u8bf7\u6c42\u5931\u8d25", { id }))
+      .catch(err => toast.error(err instanceof Error ? err.message : t("s0091"), { id }))
   }
 
   const handleImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -665,18 +668,18 @@ export default function AccountsPage() {
     if (!files.length) return
     const chunks = await Promise.all(files.map(file => file.text()))
     setBulkText(prev => [prev, ...chunks].filter(Boolean).join("\n"))
-    toast.success(`已读取 ${files.length} 个导入文件`)
+    toast.success(t("accounts.filesRead", { n: files.length }))
   }
 
   const handleBulkImport = async () => {
     if (!requireSessionKey()) return
     const candidates = parsedBulkAccounts
     if (!candidates.length) {
-      toast.error("没有识别到可导入的 token")
+      toast.error(t("s0092"))
       return
     }
     setBulkImporting(true)
-    const id = toast.loading(`正在导入 ${candidates.length} 个账号...`)
+    const id = toast.loading(t("accounts.importing", { n: candidates.length }))
     let ok = 0
     let failed = 0
     try {
@@ -696,11 +699,11 @@ export default function AccountsPage() {
         if (res.ok && data.ok) ok += 1
         else failed += 1
       }
-      toast.success(`账号导入完成：成功 ${ok}，失败 ${failed}`, { id, duration: 8000 })
+      toast.success(t("accounts.importDone", { ok, failed }), { id, duration: 8000 })
       fetchAccounts()
       if (ok > 0) setBulkText("")
     } catch (err) {
-      toast.error(`批量导入中断：${err instanceof Error ? err.message : "未知错误"}`, { id })
+      toast.error(t("accounts.importInterrupted", { msg: err instanceof Error ? err.message : t("common.unknownError") }), { id })
     } finally {
       setBulkImporting(false)
     }
@@ -708,28 +711,28 @@ export default function AccountsPage() {
 
   const handleCopyToken = async (acc: AccountItem) => {
     if (!acc.token) {
-      toast.error("该账号没有 token")
+      toast.error(t("s0093"))
       return
     }
     await navigator.clipboard.writeText(acc.token)
-    toast.success(`已复制 ${acc.email} 的 token`)
+    toast.success(t("accounts.tokenCopied", { email: acc.email }))
   }
 
   const handleEditAccount = async (acc: AccountItem) => {
     if (!requireSessionKey()) return
-    const nextEmail = window.prompt("编辑邮箱", acc.email)
+    const nextEmail = window.prompt(t("s0094"), acc.email)
     if (nextEmail === null) return
-    const nextPassword = window.prompt("编辑密码（可留空）", acc.password || "")
+    const nextPassword = window.prompt(t("s0095"), acc.password || "")
     if (nextPassword === null) return
-    const nextUsername = window.prompt("编辑用户名（可留空）", acc.username || "")
+    const nextUsername = window.prompt(t("s0096"), acc.username || "")
     if (nextUsername === null) return
-    const nextToken = window.prompt("编辑 token", acc.token || "")
+    const nextToken = window.prompt(t("s0097"), acc.token || "")
     if (nextToken === null) return
     if (!nextToken.trim()) {
-      toast.error("token 不能为空")
+      toast.error(t("s0098"))
       return
     }
-    const id = toast.loading(`正在保存 ${acc.email}...`)
+    const id = toast.loading(t("accounts.saving", { email: acc.email }))
     const res = await fetch(`${API_BASE}/api/admin/accounts`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeader() },
@@ -742,12 +745,12 @@ export default function AccountsPage() {
       }),
     }).catch(() => null)
     if (!res) {
-      toast.error("保存账号请求失败", { id })
+      toast.error(t("s0099"), { id })
       return
     }
     const data = await res.json().catch(() => ({}))
     if (!res.ok || !data.ok) {
-      toast.error(localizeError(data.error) || "保存失败", { id, duration: 8000 })
+      toast.error(localizeError(data.error) || t("s0100"), { id, duration: 8000 })
       return
     }
     if ((nextEmail.trim() || acc.email) !== acc.email) {
@@ -756,20 +759,20 @@ export default function AccountsPage() {
         headers: getAuthHeader(),
       }).catch(() => null)
     }
-    toast.success("账号已保存", { id })
+    toast.success(t("s0101"), { id })
     fetchAccounts()
   }
 
   const exportAccounts = (scope: "all" | "selected", format: "json" | "zip") => {
     const list = scope === "selected" ? selectedAccounts : accounts
     if (!list.length) {
-      toast.error(scope === "selected" ? "请先选择账号" : "没有可导出的账号")
+      toast.error(scope === "selected" ? t("s0085") : t("s0102"))
       return
     }
     const stamp = new Date().toISOString().replace(/[:.]/g, "-")
     if (format === "json") {
       downloadJSON(`qwen2api-accounts-${scope}-${stamp}.json`, { accounts: list })
-      toast.success("账号 JSON 已导出")
+      toast.success(t("s0103"))
       return
     }
     const entries: ZipEntry[] = [
@@ -777,7 +780,7 @@ export default function AccountsPage() {
       ...list.map(acc => ({ name: `accounts/${safeFileName(acc.email)}.json`, content: JSON.stringify(acc, null, 2) })),
     ]
     downloadBlob(`qwen2api-accounts-${scope}-${stamp}.zip`, zipBlob(entries))
-    toast.success("账号 ZIP 已导出")
+    toast.success(t("s0104"))
   }
 
   return (
@@ -789,80 +792,80 @@ export default function AccountsPage() {
           <div className="flex flex-col justify-between gap-5 2xl:flex-row 2xl:items-center">
             <div className="min-w-0">
               <div className="text-xs font-black uppercase tracking-[0.28em] text-muted-foreground">ACCOUNT POOL</div>
-              <h2 className="mt-2 text-4xl font-black tracking-tight">{"\u53f7\u6c60\u7ba1\u7406"}</h2>
+              <h2 className="mt-2 text-4xl font-black tracking-tight">{t("s0105")}</h2>
             </div>
             <div className="account-action-row 2xl:justify-end">
             <Button variant="outline" onClick={() => fetchAccounts(true)}>
-              <RefreshCw className="mr-2 h-4 w-4" /> {"\u5237\u65b0"}
+              <RefreshCw className="mr-2 h-4 w-4" /> {t("s0106")}
             </Button>
             <Button variant="outline" onClick={handleVerifyAll} disabled={verifyingAll}>
-              <RotateCw className={`mr-2 h-4 w-4 ${verifyingAll ? "animate-spin" : ""}`} /> {"\u5237\u65b0 GPT \u8d26\u53f7\u4fe1\u606f\u548c\u989d\u5ea6"}
+              <RotateCw className={`mr-2 h-4 w-4 ${verifyingAll ? "animate-spin" : ""}`} /> {t("s0107")}
             </Button>
             <Button onClick={() => importFileInputRef.current?.click()} className="bg-black text-white hover:bg-black/85">
-              <Import className="mr-2 h-4 w-4" /> {"\u5bfc\u5165"}
+              <Import className="mr-2 h-4 w-4" /> {t("s0108")}
             </Button>
             <Button variant="outline" onClick={() => exportAccounts("all", "json")}>
-              <Download className="mr-2 h-4 w-4" /> {"\u5bfc\u51fa\u5168\u90e8 JSON"}
+              <Download className="mr-2 h-4 w-4" /> {t("s0109")}
             </Button>
             <Button variant="outline" onClick={() => exportAccounts("all", "zip")}>
-              <Download className="mr-2 h-4 w-4" /> {"\u5bfc\u51fa\u5168\u90e8 ZIP"}
+              <Download className="mr-2 h-4 w-4" /> {t("s0110")}
             </Button>
             </div>
           </div>
-          <p className="text-muted-foreground">{"\u7edf\u4e00\u7ba1\u7406\u4e0a\u6e38\u8d26\u53f7\u6c60\uff0c\u652f\u6301\u624b\u52a8\u6ce8\u5165\u3001\u6587\u4ef6\u5bfc\u5165\u3001\u6279\u91cf\u5de1\u68c0\u4e0e\u8fd0\u884c\u72b6\u6001\u8bc6\u522b\u3002"}</p>
+          <p className="text-muted-foreground">{t("s0111")}</p>
         </div>
       </section>
 
       <div className="account-stat-row">
-        <MetricCard icon={<UserRound className="size-5" />} label="账号总数" value={stats.total} />
-        <MetricCard icon={<CheckCircle2 className="size-5" />} label="正常账户" value={stats.valid} tone="emerald" />
-        <MetricCard icon={<ShieldAlert className="size-5" />} label="能力限额" value={stats.rateLimited} tone="orange" />
-        <MetricCard icon={<XCircle className="size-5" />} label="异常账户" value={stats.abnormal} tone="rose" />
-        <MetricCard icon={<Ban className="size-5" />} label="禁用账户" value={stats.banned} />
-        <MetricCard icon={<RotateCw className="size-5" />} label="媒体额度" value={stats.quota} tone="blue" />
+        <MetricCard icon={<UserRound className="size-5" />} label={t("s0112")} value={stats.total} />
+        <MetricCard icon={<CheckCircle2 className="size-5" />} label={t("s0113")} value={stats.valid} tone="emerald" />
+        <MetricCard icon={<ShieldAlert className="size-5" />} label={t("s0114")} value={stats.rateLimited} tone="orange" />
+        <MetricCard icon={<XCircle className="size-5" />} label={t("s0115")} value={stats.abnormal} tone="rose" />
+        <MetricCard icon={<Ban className="size-5" />} label={t("s0116")} value={stats.banned} />
+        <MetricCard icon={<RotateCw className="size-5" />} label={t("s0117")} value={stats.quota} tone="blue" />
       </div>
       <p className="text-sm text-muted-foreground">
-        所有有效账号都可参与对话、图片和视频生成；图片限额、视频限额、对话限流按能力单独记录，互不影响。媒体额度字段仅展示上游返回的数据，没有专用字段时显示为 0。
+        {t("accounts.desc")}
       </p>
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-[30px] border border-white/75 bg-card/86 p-6 shadow-[var(--shadow-lift)] space-y-4">
           <div>
-            <h3 className="text-base font-bold">{"\u624b\u52a8\u6ce8\u5165\u8d26\u53f7"}</h3>
-            <p className="text-sm text-muted-foreground">{"\u8bf7\u5148\u5728 chat.qwen.ai \u767b\u5f55\uff0c\u7136\u540e\u6309 F12 \u6253\u5f00\u5f00\u53d1\u8005\u5de5\u5177\uff0c\u5728 Application / Storage \u91cc\u7684 Local Storage / \u672c\u5730\u5b58\u50a8 \u4e2d\u627e\u5230 token \u5e76\u76f4\u63a5\u590d\u5236\u5b8c\u6574\u539f\u59cb\u503c\u7c98\u8d34\u5230\u4e0b\u65b9\u8f93\u5165\u6846\u3002"}</p>
+            <h3 className="text-base font-bold">{t("s0118")}</h3>
+            <p className="text-sm text-muted-foreground">{t("s0119")}</p>
             <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-3 mt-3">
-              <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">{"\u91cd\u8981\uff1a\u8bf7\u53ea\u7c98\u8d34 Local Storage / \u672c\u5730\u5b58\u50a8 \u91cc\u7684 token \u539f\u59cb\u503c\uff0c\u4e0d\u8981\u4ece Network \u8bf7\u6c42\u6216 Authorization \u8bf7\u6c42\u5934\u4e2d\u63d0\u53d6\u3002"}</p>
-              <p className="text-xs text-orange-700/80 dark:text-orange-200/80 mt-1">{"\u8bf7\u4e0d\u8981\u5e26 Bearer \u524d\u7f00\uff0c\u4e5f\u4e0d\u8981\u7c98\u8d34\u6574\u6bb5 Authorization \u6587\u672c\u3002\u90ae\u7bb1\u548c\u5bc6\u7801\u53ef\u4ee5\u4e0d\u586b\uff0c\u7cfb\u7edf\u4f1a\u5728\u6ce8\u5165\u524d\u5148\u9a8c\u8bc1 token \u662f\u5426\u6709\u6548\u3002"}</p>
+              <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">{t("s0120")}</p>
+              <p className="text-xs text-orange-700/80 dark:text-orange-200/80 mt-1">{t("s0121")}</p>
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="text-xs font-semibold mb-1.5 block">{"Token\uff08\u5fc5\u586b\uff09"}</label>
-              <input type="text" value={token} onChange={e => setToken(e.target.value)} className="admin-input flex h-10 w-full px-3 py-2 text-sm" placeholder={"\u7c98\u8d34\u4ece Local Storage / \u672c\u5730\u5b58\u50a8 \u76f4\u63a5\u590d\u5236\u7684 token"} />
+              <label className="text-xs font-semibold mb-1.5 block">{t("s0122")}</label>
+              <input type="text" value={token} onChange={e => setToken(e.target.value)} className="admin-input flex h-10 w-full px-3 py-2 text-sm" placeholder={t("s0123")} />
             </div>
             <div>
-              <label className="text-xs font-semibold mb-1.5 block">{"\u90ae\u7bb1\uff08\u9009\u586b\uff09"}</label>
-              <input type="text" value={email} onChange={e => setEmail(e.target.value)} className="admin-input flex h-10 w-full px-3 py-2 text-sm" placeholder={"\u90ae\u7bb1\u5730\u5740"} />
+              <label className="text-xs font-semibold mb-1.5 block">{t("s0124")}</label>
+              <input type="text" value={email} onChange={e => setEmail(e.target.value)} className="admin-input flex h-10 w-full px-3 py-2 text-sm" placeholder={t("s0125")} />
             </div>
             <div>
-              <label className="text-xs font-semibold mb-1.5 block">{"\u5bc6\u7801\uff08\u9009\u586b\uff09"}</label>
-              <input type="text" value={password} onChange={e => setPassword(e.target.value)} className="admin-input flex h-10 w-full px-3 py-2 text-sm" placeholder={"\u7528\u4e8e\u81ea\u52a8\u5237\u65b0\u6216\u6fc0\u6d3b"} />
+              <label className="text-xs font-semibold mb-1.5 block">{t("s0126")}</label>
+              <input type="text" value={password} onChange={e => setPassword(e.target.value)} className="admin-input flex h-10 w-full px-3 py-2 text-sm" placeholder={t("s0127")} />
             </div>
           </div>
           <Button onClick={handleAdd} variant="secondary" className="h-10 w-full font-semibold">
-            <Plus className="mr-2 h-4 w-4" /> {"\u6ce8\u5165\u8d26\u53f7"}
+            <Plus className="mr-2 h-4 w-4" /> {t("s0128")}
           </Button>
         </div>
 
         <div className="rounded-[30px] border border-white/75 bg-card/86 p-6 shadow-[var(--shadow-lift)] space-y-4">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div className="min-w-0">
-              <h3 className="text-base font-bold">{"\u6279\u91cf\u5bfc\u5165"}</h3>
-              <p className="text-sm text-muted-foreground">支持多行 token、`email,token`、JSON 对象、JSON 数组或 webchat2api/CPA 风格的嵌套 `accounts/items/data`。</p>
+              <h3 className="text-base font-bold">{t("s0129")}</h3>
+              <p className="text-sm text-muted-foreground">{t("s0142")}</p>
             </div>
             <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full border bg-background/70 px-4 text-sm font-bold shadow-sm">
               <FileUp className="size-4" />
-              读文件
+              {t("accounts.readFile")}
               <input type="file" accept=".txt,.json,.csv" multiple className="hidden" onChange={handleImportFile} />
             </label>
           </div>
@@ -870,16 +873,16 @@ export default function AccountsPage() {
             value={bulkText}
             onChange={e => setBulkText(e.target.value)}
             className="admin-input min-h-44 w-full resize-y px-4 py-3 text-sm"
-            placeholder={"每行一个 token，或粘贴 JSON：[{\"email\":\"a@qwen\",\"token\":\"...\"}]"}
+            placeholder={t("s0130")}
             disabled={bulkImporting}
           />
           <div className="flex flex-col gap-3 rounded-2xl border border-white/75 bg-background/55 px-3 py-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="text-sm text-muted-foreground">已识别 <span className="font-black text-foreground">{parsedBulkAccounts.length}</span> 个候选账号</div>
+            <div className="text-sm text-muted-foreground">{t("s0143")} <span className="font-black text-foreground">{parsedBulkAccounts.length}</span> {t("s0144")}</div>
             <div className="flex flex-nowrap gap-2">
-              <Button variant="ghost" onClick={() => setBulkText("")} disabled={!bulkText || bulkImporting}>清空</Button>
+              <Button variant="ghost" onClick={() => setBulkText("")} disabled={!bulkText || bulkImporting}>{t("s0145")}</Button>
               <Button onClick={handleBulkImport} disabled={!parsedBulkAccounts.length || bulkImporting}>
                 {bulkImporting ? <RefreshCw className="mr-2 size-4 animate-spin" /> : <UploadCloud className="mr-2 size-4" />}
-                导入账号
+                {t("accounts.importAccount")}
               </Button>
             </div>
           </div>
@@ -888,29 +891,29 @@ export default function AccountsPage() {
 
       <div className="flex flex-col justify-between gap-4 pt-2 xl:flex-row xl:items-start">
         <div className="flex shrink-0 items-center gap-3">
-          <h3 className="text-2xl font-black">账户列表</h3>
+          <h3 className="text-2xl font-black">{t("s0146")}</h3>
           <span className="inline-flex items-center justify-center rounded-full bg-muted px-3 py-1 text-xs font-black">{filteredAccounts.length}</span>
         </div>
         <div className="account-filter-row xl:justify-end">
           <div className="flex h-11 min-w-[260px] items-center gap-2 rounded-2xl border border-white/75 bg-card/80 px-3 shadow-sm">
             <Search className="size-4 text-muted-foreground" />
-            <input value={query} onChange={e => setQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" placeholder="搜索邮箱" />
+            <input value={query} onChange={e => setQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" placeholder={t("s0131")} />
           </div>
           <select value={serviceFilter} onChange={e => setServiceFilter(e.target.value)} className="h-11 rounded-2xl border border-white/75 bg-card/80 px-4 text-sm shadow-sm outline-none">
-            <option value="all">全部服务</option>
+            <option value="all">{t("s0147")}</option>
             {serviceOptions.map(item => <option key={item} value={item}>{item}</option>)}
           </select>
           <select value={planFilter} onChange={e => setPlanFilter(e.target.value)} className="h-11 rounded-2xl border border-white/75 bg-card/80 px-4 text-sm shadow-sm outline-none">
-            <option value="all">全部计划/池</option>
+            <option value="all">{t("s0148")}</option>
             {planOptions.map(item => <option key={item} value={item}>{item}</option>)}
           </select>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-11 rounded-2xl border border-white/75 bg-card/80 px-4 text-sm shadow-sm outline-none">
-            <option value="all">全部状态</option>
-            <option value="valid">正常</option>
-            <option value="pending_activation">未激活</option>
-            <option value="rate_limited">限流</option>
-            <option value="banned">封禁</option>
-            <option value="auth_error">认证失效</option>
+            <option value="all">{t("s0149")}</option>
+            <option value="valid">{t("s0068")}</option>
+            <option value="pending_activation">{t("s0069")}</option>
+            <option value="rate_limited">{t("s0070")}</option>
+            <option value="banned">{t("s0071")}</option>
+            <option value="auth_error">{t("s0072")}</option>
           </select>
         </div>
       </div>
@@ -918,21 +921,21 @@ export default function AccountsPage() {
       <div className="overflow-hidden rounded-[30px] border border-white/75 bg-card/86 shadow-[var(--shadow-lift)]">
         <div className="flex flex-col gap-3 border-b border-border/50 px-5 py-4 text-sm xl:flex-row xl:items-center xl:justify-between">
           <Button variant="ghost" size="sm" onClick={handleDeleteAbnormal} disabled={!accounts.some(acc => acc.status_code !== "valid" && !acc.valid)} className="text-rose-600 hover:text-rose-600">
-            <Trash2 className="mr-2 size-4" /> 移除异常账号
+            <Trash2 className="mr-2 size-4" /> {t("accounts.removeAbnormal")}
           </Button>
           <div className="account-selected-action-row xl:justify-end">
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">已选 {selectedAccounts.length}</span>
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">{t("accounts.selectedCount", { count: selectedAccounts.length })}</span>
             <Button variant="ghost" size="sm" onClick={handleVerifySelected} disabled={!selectedAccounts.length}>
-              <RefreshCw className="mr-2 size-4" /> 刷新选中 GPT 账号信息和额度
+              <RefreshCw className="mr-2 size-4" /> {t("accounts.refreshSelectedLabel")}
             </Button>
             <Button variant="ghost" size="sm" onClick={handleDeleteSelected} disabled={!selectedAccounts.length} className="text-rose-600 hover:text-rose-600">
-              <Trash2 className="mr-2 size-4" /> 删除所选
+              <Trash2 className="mr-2 size-4" /> {t("accounts.deleteSelected")}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => exportAccounts("selected", "json")} disabled={!selectedAccounts.length}>
-              <Download className="mr-2 size-4" /> 导出所选 JSON
+              <Download className="mr-2 size-4" /> {t("accounts.exportSelectedJson")}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => exportAccounts("selected", "zip")} disabled={!selectedAccounts.length}>
-              <Download className="mr-2 size-4" /> 导出所选 ZIP
+              <Download className="mr-2 size-4" /> {t("accounts.exportSelectedZip")}
             </Button>
           </div>
         </div>
@@ -942,35 +945,35 @@ export default function AccountsPage() {
             <thead className="border-b bg-muted/25 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="w-14 px-5 py-4">
-                  <input type="checkbox" checked={allFilteredSelected} onChange={toggleAllFiltered} aria-label="选择全部筛选账号" />
+                  <input type="checkbox" checked={allFilteredSelected} onChange={toggleAllFiltered} aria-label={t("s0132")} />
                 </th>
                 <th className="px-4 py-4 font-bold">TOKEN</th>
-                <th className="px-4 py-4 font-bold">服务商</th>
-                <th className="px-4 py-4 font-bold">计划 / 池</th>
-                <th className="px-4 py-4 font-bold">状态</th>
-                <th className="px-4 py-4 font-bold">账号信息</th>
-                <th className="px-4 py-4 font-bold">媒体额度</th>
-                <th className="px-4 py-4 font-bold">限额 / 恢复</th>
-                <th className="px-4 py-4 text-right font-bold">成功</th>
-                <th className="px-4 py-4 text-right font-bold">失败</th>
-                <th className="px-5 py-4 text-right font-bold">操作</th>
+                <th className="px-4 py-4 font-bold">{t("s0150")}</th>
+                <th className="px-4 py-4 font-bold">{t("s0151")}</th>
+                <th className="px-4 py-4 font-bold">{t("s0152")}</th>
+                <th className="px-4 py-4 font-bold">{t("s0153")}</th>
+                <th className="px-4 py-4 font-bold">{t("s0117")}</th>
+                <th className="px-4 py-4 font-bold">{t("s0154")}</th>
+                <th className="px-4 py-4 text-right font-bold">{t("s0155")}</th>
+                <th className="px-4 py-4 text-right font-bold">{t("s0156")}</th>
+                <th className="px-5 py-4 text-right font-bold">{t("s0157")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {filteredAccounts.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="px-6 py-12 text-center text-muted-foreground">{"\u6ca1\u6709\u5339\u914d\u7684\u8d26\u53f7\uff0c\u8bf7\u8c03\u6574\u7b5b\u9009\u6216\u5bfc\u5165\u65b0 token\u3002"}</td>
+                  <td colSpan={11} className="px-6 py-12 text-center text-muted-foreground">{t("s0133")}</td>
                 </tr>
               )}
               {filteredAccounts.map(acc => (
                 <tr key={acc.email} className="transition-colors hover:bg-black/5 dark:hover:bg-white/5">
                   <td className="px-5 py-4 align-middle">
-                    <input type="checkbox" checked={selected.has(acc.email)} onChange={() => toggleSelected(acc.email)} aria-label={`选择 ${acc.email}`} />
+                    <input type="checkbox" checked={selected.has(acc.email)} onChange={() => toggleSelected(acc.email)} aria-label={t("accounts.selectEmail", { email: acc.email })} />
                   </td>
                   <td className="px-4 py-4 align-middle">
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="max-w-[260px] truncate font-mono text-xs text-foreground/80">{maskedToken(acc.token)}</span>
-                      <button type="button" onClick={() => handleCopyToken(acc)} className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title="复制 token">
+                      <button type="button" onClick={() => handleCopyToken(acc)} className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title={t("s0134")}>
                         <Clipboard className="size-4" />
                       </button>
                     </div>
@@ -980,7 +983,7 @@ export default function AccountsPage() {
                   </td>
                   <td className="px-4 py-4 align-middle">
                     <div className="font-mono text-sm">{planOf(acc)}</div>
-                    <div className="text-xs text-muted-foreground">{serviceOf(acc)} 套餐</div>
+                    <div className="text-xs text-muted-foreground">{t("accounts.planSuffix", { service: serviceOf(acc) })}</div>
                   </td>
                   <td className="px-4 py-4 align-middle">
                     <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${statusStyle(effectiveStatusCode(acc))}`}>
@@ -991,12 +994,12 @@ export default function AccountsPage() {
                   <td className="px-4 py-4 align-middle">
                     <div className="max-w-[280px] truncate font-mono text-sm text-foreground/90" title={acc.email}>{acc.email}</div>
                     {acc.source === "env" && (
-                      <div className="mt-1 inline-flex w-fit items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300" title={acc.env_name || "环境变量"}>
-                        <Lock className="size-3" /> 环境变量注入
+                      <div className="mt-1 inline-flex w-fit items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300" title={acc.env_name || t("s0135")}>
+                        <Lock className="size-3" /> {t("accounts.envInjected")}
                       </div>
                     )}
                     <div className="max-w-[280px] truncate text-xs text-muted-foreground" title={statusNote(acc)}>
-                      {acc.username || "所有有效账号均可参与对话、图片和视频生成。"}
+                      {acc.username || t("s0136")}
                     </div>
                   </td>
                   <td className="px-4 py-4 align-middle">
@@ -1013,17 +1016,17 @@ export default function AccountsPage() {
                   <td className="px-5 py-4 align-middle text-right">
                     <div className="flex items-center justify-end gap-1">
                       {effectiveStatusCode(acc) !== "valid" && effectiveStatusCode(acc) !== "rate_limited" && effectiveStatusCode(acc) !== "banned" && (
-                        <IconButton title="激活" onClick={() => handleActivate(acc.email)}>
+                        <IconButton title={t("s0137")} onClick={() => handleActivate(acc.email)}>
                           <MailWarning className="size-4" />
                         </IconButton>
                       )}
-                      <IconButton title="编辑" onClick={() => void handleEditAccount(acc)}>
+                      <IconButton title={t("s0138")} onClick={() => void handleEditAccount(acc)}>
                         <Edit3 className="size-4" />
                       </IconButton>
-                      <IconButton title="刷新 / 验证" onClick={() => handleVerify(acc.email)} disabled={verifying === acc.email}>
+                      <IconButton title={t("s0139")} onClick={() => handleVerify(acc.email)} disabled={verifying === acc.email}>
                         {verifying === acc.email ? <RefreshCw className="size-4 animate-spin" /> : <RotateCw className="size-4" />}
                       </IconButton>
-                      <IconButton title={acc.source === "env" ? "环境变量账号需要从环境变量中移除" : "删除"} onClick={() => handleDelete(acc)} disabled={acc.source === "env"} danger>
+                      <IconButton title={acc.source === "env" ? t("s0140") : t("s0141")} onClick={() => handleDelete(acc)} disabled={acc.source === "env"} danger>
                         <Trash2 className="size-4" />
                       </IconButton>
                     </div>

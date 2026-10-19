@@ -1,3 +1,4 @@
+import { t } from "./i18n"
 import { API_BASE } from "./api"
 import { getAuthHeader } from "./auth"
 
@@ -41,14 +42,14 @@ export const FALLBACK_VIDEO_MODELS: ModelOption[] = [
 ]
 
 export const CAPABILITY_LABELS: Array<{ key: keyof ModelCapability; label: string }> = [
-  { key: "thinking", label: "思考" },
-  { key: "search", label: "搜索" },
-  { key: "vision", label: "视觉" },
-  { key: "deep_research", label: "研究" },
-  { key: "image_gen", label: "图片" },
-  { key: "video_gen", label: "视频" },
-  { key: "web_dev", label: "建站" },
-  { key: "slides", label: "PPT" },
+  { key: "thinking", label: "models.capThinking" },
+  { key: "search", label: "models.capSearch" },
+  { key: "vision", label: t("s0322") },
+  { key: "deep_research", label: "models.capDeepResearch" },
+  { key: "image_gen", label: "models.capImage" },
+  { key: "video_gen", label: "models.capVideo" },
+  { key: "web_dev", label: "models.capWebDev" },
+  { key: "slides", label: "models.capSlides" },
 ]
 
 const MODEL_MODE_SUFFIX_RE = /-(thinking|search|deep-research|deep_research|image|video|webdev|web-dev|slides|t2i|t2v)$/i
@@ -133,7 +134,7 @@ export function isThinkingVariant(modelId: string): boolean {
 
 export function capabilityBadges(option?: ModelOption): string[] {
   if (!option?.capabilities) return []
-  return CAPABILITY_LABELS.filter(item => option.capabilities?.[item.key]).map(item => item.label)
+  return CAPABILITY_LABELS.filter(item => option.capabilities?.[item.key]).map(item => t(item.label))
 }
 
 export function filterTextTestModels(options: ModelOption[]): ModelOption[] {
@@ -212,14 +213,14 @@ export function groupModelOptions(options: ModelOption[]): ModelGroup[] {
 
 export function formatModeLabel(mode?: string): string {
   switch (mode) {
-    case "thinking": return "思考"
-    case "search": return "搜索"
-    case "deep_research": return "研究"
-    case "image": return "图片"
-    case "video": return "视频"
-    case "webdev": return "建站"
-    case "slides": return "PPT"
-    default: return "对话"
+    case "thinking": return t("models.modeThinking")
+    case "search": return t("models.modeSearch")
+    case "deep_research": return t("models.modeDeepResearch")
+    case "image": return t("models.modeImage")
+    case "video": return t("models.modeVideo")
+    case "webdev": return t("models.modeWebDev")
+    case "slides": return t("models.modeSlides")
+    default: return t("models.modeChat")
   }
 }
 

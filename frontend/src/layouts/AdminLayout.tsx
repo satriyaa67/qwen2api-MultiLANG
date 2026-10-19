@@ -11,20 +11,23 @@ import {
   X,
 } from "lucide-react"
 import { useState } from "react"
+import { useT } from "../lib/i18n"
+import LanguageSwitcher from "../components/LanguageSwitcher"
 
 const navItems = [
-  { name: "运行状态", path: "/", icon: LayoutDashboard },
-  { name: "账号管理", path: "/accounts", icon: Activity },
-  { name: "API Key", path: "/tokens", icon: Key },
-  { name: "接口测试", path: "/test", icon: MessageSquare },
-  { name: "图片生成", path: "/images", icon: Image },
-  { name: "视频生成", path: "/videos", icon: Video },
-  { name: "系统设置", path: "/settings", icon: Settings },
+  { key: "nav.status", path: "/", icon: LayoutDashboard },
+  { key: "nav.accounts", path: "/accounts", icon: Activity },
+  { key: "nav.tokens", path: "/tokens", icon: Key },
+  { key: "nav.test", path: "/test", icon: MessageSquare },
+  { key: "nav.images", path: "/images", icon: Image },
+  { key: "nav.videos", path: "/videos", icon: Video },
+  { key: "nav.settings", path: "/settings", icon: Settings },
 ]
 
 export default function AdminLayout() {
   const loc = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { t } = useT()
   const activeItem = navItems.find(item => item.path === loc.pathname) || navItems[0]
 
   return (
@@ -45,14 +48,14 @@ export default function AdminLayout() {
       >
         <div className="flex h-20 items-center justify-between border-b border-border/45 px-6">
           <Link to="/" onClick={() => setMobileOpen(false)} className="group min-w-0">
-            <div className="text-[11px] font-black uppercase tracking-[0.32em] text-muted-foreground">Go Gateway</div>
+            <div className="text-[11px] font-black uppercase tracking-[0.32em] text-muted-foreground">{t("layout.eyebrow")}</div>
             <div className="mt-1 truncate text-2xl font-black tracking-tight transition group-hover:text-primary">qwen2API</div>
           </Link>
           <button
             type="button"
             className="rounded-full border border-white/70 bg-card/70 p-2 text-muted-foreground shadow-sm md:hidden"
             onClick={() => setMobileOpen(false)}
-            aria-label="关闭导航"
+            aria-label={t("layout.closeNav")}
           >
             <X className="size-5" />
           </button>
@@ -79,7 +82,7 @@ export default function AdminLayout() {
                 >
                   <item.icon className="size-4" />
                 </span>
-                <span className="truncate">{item.name}</span>
+                <span className="truncate">{t(item.key)}</span>
               </Link>
             )
           })}
@@ -89,10 +92,10 @@ export default function AdminLayout() {
           <div className="rounded-[24px] border border-white/70 bg-muted/22 p-4 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-black text-muted-foreground">
               <span className="size-2 rounded-full bg-accent" />
-              Go 后端运行
+              {t("layout.footerTitle")}
             </div>
             <div className="mt-2 text-sm leading-6 text-muted-foreground">
-              保持原版管理入口，前端只展示必要页面。
+              {t("layout.footerDesc")}
             </div>
           </div>
         </div>
@@ -105,16 +108,17 @@ export default function AdminLayout() {
               type="button"
               className="rounded-full border border-white/70 bg-card/70 p-2 text-muted-foreground shadow-sm md:hidden"
               onClick={() => setMobileOpen(true)}
-              aria-label="打开导航"
+              aria-label={t("layout.openNav")}
             >
               <Menu className="size-5" />
             </button>
             <div className="min-w-0">
-              <div className="text-[11px] font-black uppercase tracking-[0.24em] text-muted-foreground">Admin Console</div>
-              <h1 className="truncate text-xl font-black tracking-tight md:text-2xl">{activeItem.name}</h1>
+              <div className="text-[11px] font-black uppercase tracking-[0.24em] text-muted-foreground">{t("layout.eyebrow")}</div>
+              <h1 className="truncate text-xl font-black tracking-tight md:text-2xl">{t(activeItem.key)}</h1>
             </div>
           </div>
-          <div className="hidden items-center gap-2 lg:flex">
+          <div className="hidden items-center gap-3 lg:flex">
+            <LanguageSwitcher />
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/75 bg-card/70 px-3 py-1 text-xs font-bold text-muted-foreground shadow-sm">
               <span className="size-1.5 rounded-full bg-accent" />
               qwen2API
